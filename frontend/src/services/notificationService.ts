@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-// Configure notification behaviour
+// Display notifications while the app is open
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -12,20 +12,15 @@ Notifications.setNotificationHandler({
 });
 
 /**
- * Requests notification permission.
- * Returns true if permission has been granted.
+ * Request notification permission
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
-      const { status } =
-        await Notifications.requestPermissionsAsync();
-
+      const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
 
@@ -34,11 +29,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
       return false;
     }
 
-    // Android notification channel (required)
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("daily-reminders", {
         name: "Daily Reminders",
-        importance: Notifications.AndroidImportance.DEFAULT,
+        importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#2563EB",
       });
@@ -46,19 +40,46 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("Notification permission error:", error);
+    console.error("Permission error:", error);
     return false;
   }
 }
 
 /**
- * Schedules a daily reminder at 8:00 PM.
+ * TESTING VERSION
+ * Fires 60 seconds after scheduling.
  */
-export async function scheduleDailyReminder(): Promise<void> {
+export async function scheduleDailyReminder() {
   try {
-    // Prevent duplicate reminders
     await Notifications.cancelAllScheduledNotificationsAsync();
 
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Daily Wellbeing Check-in",
+        body: "Take 60 seconds to log your mood and sleep today.",
+        sound: false,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 60,
+      },
+    });
+
+    console.log("Reminder scheduled in 60 seconds.");
+  } catch (error) {
+    console.error("Failed to schedule reminder:", error);
+  }
+}
+
+/**
+ * FINAL SUBMISSION VERSION
+ *
+ * Replace the function above with this before submission.
+ */
+/*
+export async function scheduleDailyReminder() {
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Daily Wellbeing Check-in",
@@ -71,32 +92,27 @@ export async function scheduleDailyReminder(): Promise<void> {
         minute: 0,
       },
     });
-
-    console.log("Daily reminder scheduled.");
   } catch (error) {
-    console.error("Failed to schedule reminder:", error);
+    console.error(error);
   }
 }
+*/
 
-/**
- * Cancels all scheduled reminders.
- * Call this during logout.
+/** * Logout cleanup
  */
-export async function cancelDailyReminders(): Promise<void> {
+export async function cancelDailyReminders() {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (error) {
-    console.error("Failed to cancel notifications:", error);
+    console.error(error);
   }
 }
 
 /**
- * Initialises notifications after login.
+ * Initialise notifications 
  */
-export async function initialiseNotifications(): Promise<void> {
+export async function initialiseNotifications() {
   const granted = await requestNotificationPermission();
-
   if (!granted) return;
-
   await scheduleDailyReminder();
 }

@@ -26,12 +26,22 @@ function average(values: number[]): number {
  * Generates numerical averages and supportive, non-clinical feedback strings.
  */
 export function generateInsights(logs: WeeklyLog[]): WeeklyInsights {
-  // 1. Calculate Averages
-  const averageStress = average(logs.map(log => log.stress));
-  const averageSleep = average(logs.map(log => log.sleep_hours));
-  const averageStudy = average(logs.map(log => log.study_hours));
+  // Safe extraction targeting both database snake_case and typescript camelCase property states
+  const averageStress = average(logs.map(log => Number(log.stress) || 0));
+  
+  const averageSleep = average(logs.map(log => {
+    const val = log.sleep_hours !== undefined ? log.sleep_hours : (log as any).sleepHours;
+    return Number(val) || 0;
+  }));
 
-  // 2. Generate Supportive Feedback (AT2 Compliant)
+  const averageStudy = average(logs.map(log => {
+    const val = log.study_hours !== undefined ? log.study_hours : (log as any).studyHours;
+    return Number(val) || 0;
+  }));
+
+  // -------------------------------------------------------------------------
+  // Dynamic Analytical Insights Generation Engine (The remainder stays identical)
+  // -------------------------------------------------------------------------
   let stressMessage = "";
   if (averageStress >= 4) {
     stressMessage = `Your average stress this week was ${averageStress}/5. Consider reducing workload pressure and scheduling recovery time.`;

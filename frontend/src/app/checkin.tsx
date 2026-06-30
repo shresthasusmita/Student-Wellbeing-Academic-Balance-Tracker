@@ -14,9 +14,6 @@ import { router } from "expo-router";
 import { submitDailyLog } from "../services/logService";
 
 export default function CheckInScreen() {
-  // ---------------------------------------------------------------------------
-  // State Management (Pre-populated with neutral defaults for speed)
-  // ---------------------------------------------------------------------------
   const [mood, setMood] = useState<number>(3);
   const [stress, setStress] = useState<number>(3);
   const [sleepHours, setSleepHours] = useState<number>(7.0);
@@ -24,16 +21,12 @@ export default function CheckInScreen() {
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Array index maps to 1-5 scale: [1: Very Bad, 2: Bad, 3: Neutral, 4: Good, 5: Excellent]
   const moodEmojis = ["😔", "😕", "😐", "🙂", "😄"];
 
-  // ---------------------------------------------------------------------------
-  // Submission Handler
-  // ---------------------------------------------------------------------------
   const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent overlapping asynchronous threads execution
     setIsSubmitting(true);
     
-    // Generate YYYY-MM-DD string for MySQL compatibility
     const today = new Date().toISOString().split("T")[0];
 
     try {
@@ -46,17 +39,15 @@ export default function CheckInScreen() {
         log_date: today
       });
 
-      // Navigate back to dashboard and destroy the check-in history stack
       router.replace("/dashboard");
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Failed to submit log. Please try again.";
       Alert.alert("Submission Failed", errorMessage);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Release memory handle safely
     }
   };
 
-  // Helper function for quick Stepper adjustments
   const adjustValue = (
     setter: React.Dispatch<React.SetStateAction<number>>, 
     current: number, 
@@ -86,12 +77,13 @@ export default function CheckInScreen() {
               return (
                 <Pressable 
                   key={value} 
-                  onPress={() => setMood(value)}
+                  onPress={() => !isSubmitting && setMood(value)}
                   style={({ pressed }) => [
                     styles.emojiBtn, 
                     isSelected && styles.emojiBtnSelected,
-                    pressed && styles.pressedState
+                    pressed && !isSubmitting && styles.pressedState
                   ]}
+                  disabled={isSubmitting}
                 >
                   <Text style={styles.emojiText}>{emoji}</Text>
                 </Pressable>
@@ -105,55 +97,61 @@ export default function CheckInScreen() {
           <Text style={styles.label}>Stress Level (1-5)</Text>
           <View style={styles.stepperContainer}>
             <Pressable 
-              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              style={({ pressed }) => [styles.stepperBtn, pressed && !isSubmitting && styles.pressedState]} 
               onPress={() => adjustValue(setStress, stress, -1, 1, 5)}
+              disabled={isSubmitting}
             >
               <Text style={styles.stepperSymbol}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{stress}</Text>
             <Pressable 
-              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              style={({ pressed }) => [styles.stepperBtn, pressed && !isSubmitting && styles.pressedState]} 
               onPress={() => adjustValue(setStress, stress, 1, 1, 5)}
+              disabled={isSubmitting}
             >
               <Text style={styles.stepperSymbol}>+</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 3. SLEEP - Float Stepper (0.5 increments) */}
+        {/* 3. SLEEP - Float Stepper */}
         <View style={styles.card}>
           <Text style={styles.label}>Sleep Duration</Text>
           <View style={styles.stepperContainer}>
             <Pressable 
-              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              style={({ pressed }) => [styles.stepperBtn, pressed && !isSubmitting && styles.pressedState]} 
               onPress={() => adjustValue(setSleepHours, sleepHours, -0.5, 0, 24)}
+              disabled={isSubmitting}
             >
               <Text style={styles.stepperSymbol}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{sleepHours.toFixed(1)} <Text style={styles.stepperUnit}>HRS</Text></Text>
             <Pressable 
-              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              style={({ pressed }) => [styles.stepperBtn, pressed && !isSubmitting && styles.pressedState]} 
               onPress={() => adjustValue(setSleepHours, sleepHours, 0.5, 0, 24)}
+              disabled={isSubmitting}
             >
               <Text style={styles.stepperSymbol}>+</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 4. STUDY - Float Stepper (0.5 increments) */}
+        {/* 4. STUDY - Float Stepper */}
         <View style={styles.card}>
           <Text style={styles.label}>Study Duration</Text>
           <View style={styles.stepperContainer}>
             <Pressable 
-              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              style={({ pressed }) => [styles.stepperBtn, pressed && !isSubmitting && styles.pressedState]} 
               onPress={() => adjustValue(setStudyHours, studyHours, -0.5, 0, 24)}
+              disabled={isSubmitting}
             >
               <Text style={styles.stepperSymbol}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{studyHours.toFixed(1)} <Text style={styles.stepperUnit}>HRS</Text></Text>
             <Pressable 
-              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              style={({ pressed }) => [styles.stepperBtn, pressed && !isSubmitting && styles.pressedState]} 
               onPress={() => adjustValue(setStudyHours, studyHours, 0.5, 0, 24)}
+              disabled={isSubmitting}
             >
               <Text style={styles.stepperSymbol}>+</Text>
             </Pressable>
@@ -172,6 +170,7 @@ export default function CheckInScreen() {
             maxLength={500}
             multiline
             numberOfLines={3}
+            editable={!isSubmitting}
           />
         </View>
 
@@ -229,7 +228,6 @@ const styles = StyleSheet.create({
     marginBottom: 20, 
     borderWidth: 3,
     borderColor: "#000000",
-    // Thick flat structural drop shadow (iOS)
     shadowColor: "#000000", 
     shadowOffset: { width: 4, height: 4 }, 
     shadowOpacity: 1, 
@@ -262,8 +260,8 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
   },
   emojiBtnSelected: { 
-    backgroundColor: "#FFDE4D", // Accent high-visibility yellow select fill
-    shadowOffset: { width: 0, height: 0 }, // Flat offset mimicking active downstate
+    backgroundColor: "#FFDE4D", 
+    shadowOffset: { width: 0, height: 0 }, 
   },
   emojiText: { 
     fontSize: 26 
@@ -276,7 +274,7 @@ const styles = StyleSheet.create({
   stepperBtn: { 
     width: 46, 
     height: 46, 
-    backgroundColor: "#54D2F2", // Accent high-contrast cyan for active buttons
+    backgroundColor: "#54D2F2", 
     borderRadius: 8, 
     borderWidth: 2,
     borderColor: "#000000",
@@ -316,7 +314,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top" 
   },
   submitButton: { 
-    backgroundColor: "#FFDE4D", // Signature yellow call-to-action block color
+    backgroundColor: "#FFDE4D", 
     paddingVertical: 18, 
     borderRadius: 12, 
     alignItems: "center", 

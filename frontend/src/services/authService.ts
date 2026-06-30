@@ -1,5 +1,6 @@
 import api from "./api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { cancelDailyReminders } from "./notificationService";
 
 /**
  * Sends user credentials to the backend to authenticate
@@ -41,5 +42,6 @@ export async function fetchUserProfile() {
  * Completely purges the session from local device memory
  */
 export async function secureLogout() {
+  await cancelDailyReminders();
   await AsyncStorage.removeItem("token");
 }

@@ -49,7 +49,6 @@ export default function CheckInScreen() {
       // Navigate back to dashboard and destroy the check-in history stack
       router.replace("/dashboard");
     } catch (error: any) {
-      // Gracefully catch the 409 Conflict (Duplicate Entry) or 400 Validation errors
       const errorMessage = error.response?.data?.message || "Failed to submit log. Please try again.";
       Alert.alert("Submission Failed", errorMessage);
     } finally {
@@ -79,7 +78,7 @@ export default function CheckInScreen() {
 
         {/* 1. MOOD - Emoji Taps */}
         <View style={styles.card}>
-          <Text style={styles.label}>Mood</Text>
+          <Text style={styles.label}>Mood Status</Text>
           <View style={styles.emojiContainer}>
             {moodEmojis.map((emoji, index) => {
               const value = index + 1;
@@ -88,7 +87,11 @@ export default function CheckInScreen() {
                 <Pressable 
                   key={value} 
                   onPress={() => setMood(value)}
-                  style={[styles.emojiBtn, isSelected && styles.emojiBtnSelected]}
+                  style={({ pressed }) => [
+                    styles.emojiBtn, 
+                    isSelected && styles.emojiBtnSelected,
+                    pressed && styles.pressedState
+                  ]}
                 >
                   <Text style={styles.emojiText}>{emoji}</Text>
                 </Pressable>
@@ -101,11 +104,17 @@ export default function CheckInScreen() {
         <View style={styles.card}>
           <Text style={styles.label}>Stress Level (1-5)</Text>
           <View style={styles.stepperContainer}>
-            <Pressable style={styles.stepperBtn} onPress={() => adjustValue(setStress, stress, -1, 1, 5)}>
+            <Pressable 
+              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              onPress={() => adjustValue(setStress, stress, -1, 1, 5)}
+            >
               <Text style={styles.stepperSymbol}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{stress}</Text>
-            <Pressable style={styles.stepperBtn} onPress={() => adjustValue(setStress, stress, 1, 1, 5)}>
+            <Pressable 
+              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              onPress={() => adjustValue(setStress, stress, 1, 1, 5)}
+            >
               <Text style={styles.stepperSymbol}>+</Text>
             </Pressable>
           </View>
@@ -113,13 +122,19 @@ export default function CheckInScreen() {
 
         {/* 3. SLEEP - Float Stepper (0.5 increments) */}
         <View style={styles.card}>
-          <Text style={styles.label}>Sleep Hours</Text>
+          <Text style={styles.label}>Sleep Duration</Text>
           <View style={styles.stepperContainer}>
-            <Pressable style={styles.stepperBtn} onPress={() => adjustValue(setSleepHours, sleepHours, -0.5, 0, 24)}>
+            <Pressable 
+              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              onPress={() => adjustValue(setSleepHours, sleepHours, -0.5, 0, 24)}
+            >
               <Text style={styles.stepperSymbol}>-</Text>
             </Pressable>
-            <Text style={styles.stepperValue}>{sleepHours.toFixed(1)}</Text>
-            <Pressable style={styles.stepperBtn} onPress={() => adjustValue(setSleepHours, sleepHours, 0.5, 0, 24)}>
+            <Text style={styles.stepperValue}>{sleepHours.toFixed(1)} <Text style={styles.stepperUnit}>HRS</Text></Text>
+            <Pressable 
+              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              onPress={() => adjustValue(setSleepHours, sleepHours, 0.5, 0, 24)}
+            >
               <Text style={styles.stepperSymbol}>+</Text>
             </Pressable>
           </View>
@@ -127,25 +142,31 @@ export default function CheckInScreen() {
 
         {/* 4. STUDY - Float Stepper (0.5 increments) */}
         <View style={styles.card}>
-          <Text style={styles.label}>Study Hours</Text>
+          <Text style={styles.label}>Study Duration</Text>
           <View style={styles.stepperContainer}>
-            <Pressable style={styles.stepperBtn} onPress={() => adjustValue(setStudyHours, studyHours, -0.5, 0, 24)}>
+            <Pressable 
+              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              onPress={() => adjustValue(setStudyHours, studyHours, -0.5, 0, 24)}
+            >
               <Text style={styles.stepperSymbol}>-</Text>
             </Pressable>
-            <Text style={styles.stepperValue}>{studyHours.toFixed(1)}</Text>
-            <Pressable style={styles.stepperBtn} onPress={() => adjustValue(setStudyHours, studyHours, 0.5, 0, 24)}>
+            <Text style={styles.stepperValue}>{studyHours.toFixed(1)} <Text style={styles.stepperUnit}>HRS</Text></Text>
+            <Pressable 
+              style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressedState]} 
+              onPress={() => adjustValue(setStudyHours, studyHours, 0.5, 0, 24)}
+            >
               <Text style={styles.stepperSymbol}>+</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 5. NOTES - Optional Text */}
+        {/* 5. NOTES - Optional Text Input */}
         <View style={styles.card}>
           <Text style={styles.label}>Notes (Optional)</Text>
           <TextInput
             style={styles.textInput}
             placeholder="Any context for today?"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#7A7A7A"
             value={notes}
             onChangeText={setNotes}
             maxLength={500}
@@ -156,12 +177,16 @@ export default function CheckInScreen() {
 
         {/* SUBMIT BUTTON */}
         <Pressable 
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]} 
+          style={({ pressed }) => [
+            styles.submitButton, 
+            isSubmitting && styles.submitButtonDisabled,
+            pressed && !isSubmitting && styles.pressedState
+          ]} 
           onPress={handleSubmit}
           disabled={isSubmitting}
         >
           {isSubmitting ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color="#000000" />
           ) : (
             <Text style={styles.submitButtonText}>Save Daily Log</Text>
           )}
@@ -171,31 +196,151 @@ export default function CheckInScreen() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles (Optimized for Readability & Large Touch Targets)
-// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  headerTitle: { fontSize: 32, fontWeight: "bold", color: "#111827", textAlign: "center", marginTop: 10 },
-  subHeader: { fontSize: 16, color: "#6b7280", textAlign: "center", marginBottom: 30 },
-  
-  card: { backgroundColor: "#ffffff", padding: 20, borderRadius: 16, marginBottom: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-  label: { fontSize: 16, fontWeight: "600", color: "#374151", marginBottom: 16 },
-  
-  emojiContainer: { flexDirection: "row", justifyContent: "space-between" },
-  emojiBtn: { padding: 10, borderRadius: 50, backgroundColor: "#f9fafb", borderWidth: 2, borderColor: "transparent" },
-  emojiBtnSelected: { backgroundColor: "#eff6ff", borderColor: "#3b82f6" },
-  emojiText: { fontSize: 32 },
-
-  stepperContainer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
-  stepperBtn: { width: 50, height: 50, backgroundColor: "#f3f4f6", borderRadius: 25, alignItems: "center", justifyContent: "center" },
-  stepperSymbol: { fontSize: 24, fontWeight: "600", color: "#4b5563" },
-  stepperValue: { fontSize: 28, fontWeight: "bold", color: "#111827", width: 80, textAlign: "center" },
-
-  textInput: { backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, padding: 16, fontSize: 16, color: "#111827", minHeight: 100, textAlignVertical: "top" },
-  
-  submitButton: { backgroundColor: "#4f46e5", paddingVertical: 18, borderRadius: 12, alignItems: "center", marginTop: 10 },
-  submitButtonDisabled: { backgroundColor: "#818cf8" },
-  submitButtonText: { color: "#ffffff", fontSize: 18, fontWeight: "bold" }
+  container: { 
+    flex: 1, 
+    backgroundColor: "#FFF9EE" 
+  },
+  scrollContent: { 
+    padding: 24, 
+    paddingBottom: 40 
+  },
+  headerTitle: { 
+    fontSize: 32, 
+    fontWeight: "900", 
+    color: "#000000", 
+    textAlign: "center", 
+    marginTop: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5
+  },
+  subHeader: { 
+    fontSize: 16, 
+    color: "#000000", 
+    fontWeight: "700",
+    textAlign: "center", 
+    marginBottom: 28,
+    marginTop: 4
+  },
+  card: { 
+    backgroundColor: "#FFFFFF", 
+    padding: 20, 
+    borderRadius: 16, 
+    marginBottom: 20, 
+    borderWidth: 3,
+    borderColor: "#000000",
+    // Thick flat structural drop shadow (iOS)
+    shadowColor: "#000000", 
+    shadowOffset: { width: 4, height: 4 }, 
+    shadowOpacity: 1, 
+    shadowRadius: 0,
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: "900", 
+    color: "#000000", 
+    marginBottom: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.5
+  },
+  emojiContainer: { 
+    flexDirection: "row", 
+    justifyContent: "space-between" 
+  },
+  emojiBtn: { 
+    width: 48,
+    height: 48,
+    borderRadius: 24, 
+    backgroundColor: "#FFFFFF", 
+    borderWidth: 2, 
+    borderColor: "#000000",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  emojiBtnSelected: { 
+    backgroundColor: "#FFDE4D", // Accent high-visibility yellow select fill
+    shadowOffset: { width: 0, height: 0 }, // Flat offset mimicking active downstate
+  },
+  emojiText: { 
+    fontSize: 26 
+  },
+  stepperContainer: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between" 
+  },
+  stepperBtn: { 
+    width: 46, 
+    height: 46, 
+    backgroundColor: "#54D2F2", // Accent high-contrast cyan for active buttons
+    borderRadius: 8, 
+    borderWidth: 2,
+    borderColor: "#000000",
+    alignItems: "center", 
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  stepperSymbol: { 
+    fontSize: 22, 
+    fontWeight: "900", 
+    color: "#000000" 
+  },
+  stepperValue: { 
+    fontSize: 24, 
+    fontWeight: "900", 
+    color: "#000000", 
+    textAlign: "center" 
+  },
+  stepperUnit: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#000000",
+  },
+  textInput: { 
+    backgroundColor: "#FFFFFF", 
+    borderWidth: 2, 
+    borderColor: "#000000", 
+    borderRadius: 12, 
+    padding: 14, 
+    fontSize: 16, 
+    color: "#000000", 
+    fontWeight: "600",
+    minHeight: 100, 
+    textAlignVertical: "top" 
+  },
+  submitButton: { 
+    backgroundColor: "#FFDE4D", // Signature yellow call-to-action block color
+    paddingVertical: 18, 
+    borderRadius: 12, 
+    alignItems: "center", 
+    marginTop: 10,
+    borderWidth: 3,
+    borderColor: "#000000",
+    shadowColor: "#000000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  submitButtonDisabled: { 
+    backgroundColor: "#A3A3A3",
+    shadowOffset: { width: 0, height: 0 }
+  },
+  submitButtonText: { 
+    color: "#000000", 
+    fontSize: 18, 
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.5
+  },
+  pressedState: {
+    transform: [{ translateX: 2 }, { translateY: 2 }],
+    shadowOffset: { width: 0, height: 0 },
+  }
 });

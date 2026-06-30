@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from "react-native";
 import { router, Link } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { login } from "../services/authService";
@@ -15,22 +15,17 @@ export default function Login() {
       return;
     }
 
-    setLoading(false);
     try {
       setLoading(true);
-      // 1. Call the frontend service to hit the backend API
       const data = await login(email, password);
 
       if (data.success && data.token) {
-        // 2. Store the JWT token on the phone's storage
         await AsyncStorage.setItem("token", data.token);
-        
-        // 3. Cleanly navigate to the protected dashboard
         router.replace("/dashboard");
       }
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || "Invalid email or password";
-      Alert.alert("Login Failed", errorMsg);
+      const errorMsg = error.response?.data?.message || error.message || "An unexpected error occurred.";
+      Alert.alert("Debug Info", errorMsg);
     } finally {
       setLoading(false);
     }
@@ -43,6 +38,7 @@ export default function Login() {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#7A7A7A"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -52,23 +48,102 @@ export default function Login() {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="#7A7A7A"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
       
-      <Button title={loading ? "Logging in..." : "Login"} onPress={handleLogin} disabled={loading} />
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleLogin} 
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator color="#000" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )
+      }
+      </TouchableOpacity>
       
-      <Link href="/register" style={styles.link}>
-        <Text>Don't have an account? Register here</Text>
+      <Link href="/register" asChild>
+        <TouchableOpacity style={styles.linkContainer}>
+          <Text style={styles.linkText}>Don't have an account? Register here</Text>
+        </TouchableOpacity>
       </Link>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, textAlign: "center" },
-  input: { borderWidth: 1, borderColor: "#ccc", padding: 10, marginBottom: 15, borderRadius: 5 },
-  link: { marginTop: 15, textAlign: "center", color: "blue" }
+  container: { 
+    flex: 1, 
+    justifyContent: "center", 
+    padding: 24, 
+    backgroundColor: "#FFF9EE" // Off-white/cream canvas tint from reference
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: "900", // Thick, heavy brutalist typography
+    color: "#000000",
+    marginBottom: 32, 
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  input: { 
+    backgroundColor: "#FFFFFF",
+    borderWidth: 3, 
+    borderColor: "#000000", 
+    padding: 16, 
+    marginBottom: 20, 
+    borderRadius: 12, 
+    fontSize: 16,
+    color: "#000000",
+    fontWeight: "600",
+    // Neo-Brutalist crisp crisp offset shadow (iOS)
+    shadowColor: "#000000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    // Android flat shadow fallback
+    elevation: 0, 
+  },
+  button: {
+    backgroundColor: "#FFDE4D", // High-contrast signature vibrant yellow
+    borderWidth: 3,
+    borderColor: "#000000",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    // Neo-Brutalist crisp offset shadow (iOS)
+    shadowColor: "#000000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  buttonDisabled: {
+    backgroundColor: "#A3A3A3",
+    shadowOffset: { width: 0, height: 0 }, // Simulates a "pressed" flat state when disabled
+  },
+  buttonText: {
+    color: "#000000",
+    fontSize: 18,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  linkContainer: {
+    marginTop: 24,
+    alignItems: "center",
+  },
+  linkText: { 
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#000000",
+    textDecorationLine: "underline", // Emphasized structural navigation links
+  }
 });

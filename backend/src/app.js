@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const userRoutes =
   require("./routes/userRoutes");
+const logRoutes = require("./routes/logRoutes");
   
 require("dotenv").config();
 
@@ -19,7 +20,7 @@ app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-
+app.use("/api/logs", logRoutes);
 app.get("/", (req, res) => {
   res.json({
     message:

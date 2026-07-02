@@ -7,8 +7,9 @@ import {
   ActivityIndicator,
   StyleSheet,
   RefreshControl,
+  Image,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import InsightsCard from "../components/InsightsCard";
 import StressMoodChart from "../components/StressMoodChart";
@@ -20,12 +21,14 @@ import { fetchWeeklyLogs } from "../services/logService";
 import { secureLogout } from "../services/authService";
 import { loadWeeklyLogsCache, saveWeeklyLogsCache } from "../services/cacheService";
 import { initialiseNotifications } from "../services/notificationService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Dashboard() {
   const [logs, setLogs] = useState<WeeklyLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [sessionPic, setSessionPic] = useState<string | null>(null);
 
   useEffect(() => {
   async function initialiseApp() {
@@ -35,6 +38,15 @@ export default function Dashboard() {
 
   initialiseApp();
 }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      async function syncProfilePic() {
+        const cachedPic = await AsyncStorage.getItem("session_profile_pic");
+        setSessionPic(cachedPic);
+      }
+      syncProfilePic();
+    }, [])
+  );
 
   async function initialiseDashboard() {
     // Read directly from Flash Storage Cache to bypass slow cold boot networks
@@ -111,7 +123,14 @@ export default function Dashboard() {
           onPress={() => router.push("/profile")}
           activeOpacity={0.8}
         >
-          <Text style={styles.profileIconText}>👤</Text>
+          {sessionPic ? (
+            <Image 
+              source={{ uri: sessionPic }} 
+              style={{ width: "100%", height: "100%", borderRadius: 20 }} 
+            />
+          ) : (
+            <Text style={styles.profileIconText}>👤</Text>
+          )}
         </TouchableOpacity>
       </View>
 
